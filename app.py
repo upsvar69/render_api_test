@@ -16,7 +16,7 @@ def get_news():
     print("🔑 API key loaded successfully.")
 
     SEARCH_QUERY = "belt and road"
-    API_ENDPOINT = f"https://api.currentsapi.services/v1/search"
+    API_ENDPOINT = "https://api.currentsapi.services/v1/search"
     params = {
         "keywords": SEARCH_QUERY,
         "language": "en"
@@ -27,17 +27,25 @@ def get_news():
     }
 
     print("🌐 Connecting to Currents API...")
+    print("📍 Endpoint:", API_ENDPOINT)
+    print("🔐 Headers:", headers)
+    print("🧾 Params:", params)
+
     try:
         response = requests.get(API_ENDPOINT, headers=headers, params=params)
-        print(f"📡 Currents API response status: {response.status_code}")
+        print(f"📡 Response Status Code: {response.status_code}")
+        print("🔍 Raw response text (truncated):", response.text[:300])
 
         if response.status_code != 200:
-            print("⚠️ Non-200 response received!")
-            print("🔍 Response text:", response.text)
-            return jsonify({"error": "⚠️ Failed to fetch data from Currents API"}), response.status_code
+            print("⚠️ Non-200 status code received.")
+            return jsonify({"error": "⚠️ Failed to fetch data from Currents API", "details": response.text}), response.status_code
 
-        data = response.json()
-        print("📦 JSON response received.")
+        try:
+            data = response.json()
+            print("📦 Successfully parsed JSON.")
+        except Exception as json_err:
+            print("❌ Failed to parse JSON:", json_err)
+            return jsonify({"error": "❌ Failed to parse JSON", "details": response.text}), 500
 
     except Exception as e:
         print("❌ Exception occurred during request:", e)
