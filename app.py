@@ -1,64 +1,49 @@
-from flask import Flask
-import requests
-from bs4 import BeautifulSoup
+import feedparser
 
-app = Flask(__name__)
+# List of RSS feeds to check
+RSS_FEEDS = {
+    "World": "https://feeds.bbci.co.uk/news/world/rss.xml",
+    "Asia": "https://feeds.bbci.co.uk/news/world/asia/rss.xml",
+    "Top Stories": "https://feeds.bbci.co.uk/news/rss.xml"
+}
 
-GOOGLE_SEARCH_URL = "https://www.google.com/search?q=site:bbc.com+%22Belt+and+Road+Initiative%22"
+KEYWORD = "belt and road"
+MAX_RESULTS = 5
 
-@app.route("/")
-def home():
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
-    }
+print("🔗 BBC Articles on Belt and Road Initiative (via RSS)")
+print("🧪 Debug Info")
 
-    debug_log = []
-    articles = []
+matched_articles = []
 
-    try:
-        debug_log.append("🔍 Sending request to Google search...")
-        response = requests.get(GOOGLE_SEARCH_URL, headers=headers, timeout=10)
-        debug_log.append(f"📡 Google response status: {response.status_code}")
-        debug_log.append(f"📦 Content size: {len(response.content)} bytes")
+for name, url in RSS_FEEDS.items():
+    print(f"🌐 Connecting to {name} feed...")
+    feed = feedparser.parse(url)
 
-        soup = BeautifulSoup(response.text, "html.parser")
+    if feed.bozo:
+        print(f"❌ Failed to parse feed: {name}")
+        continue
 
-        result_blocks = soup.select("div.yuRUbf a[href]")
-        debug_log.append(f"🔍 Found {len(result_blocks)} <a> tags inside div.yuRUbf")
+    print(f"✅ Successfully parsed {len(feed.entries)} entries from {name}")
 
-        found_titles = 0
-        for idx, a in enumerate(result_blocks):
-            debug_log.append(f"🔗 Checking link #{idx + 1}")
-            title_tag = a.find("h3")
-            if not title_tag:
-                debug_log.append("   ❌ No <h3> tag inside <a>")
-                continue
-
-            title = title_tag.get_text(strip=True)
-            link = a.get("href")
-
-            if "bbc.com" not in link:
-                debug_log.append(f"   ⚠️ Link does not point to bbc.com: {link}")
-                continue
-
-            debug_log.append(f"   ✅ Found BBC article: {title}")
-            articles.append((title, link))
-            found_titles += 1
-
-            if found_titles >= 10:
+    for entry in feed.entries:
+        if KEYWORD.lower() in entry.title.lower() or KEYWORD.lower() in entry.get("summary", "").lower():
+            matched_articles.append({
+                "title": entry.title,
+                "link": entry.link,
+                "published": entry.get("published", "No date")
+            })
+            if len(matched_articles) >= MAX_RESULTS:
                 break
+    if len(matched_articles) >= MAX_RESULTS:
+        break
 
-        html = "<h1>🔗 BBC Articles on Belt and Road Initiative Again (via Google)</h1><ul>"
-        for title, link in articles:
-            html += f'<li><a href="{link}" target="_blank">{title}</a></li>'
-        html += "</ul>"
-
-        html += "<hr><h2>🧪 Debug Info</h2><pre>" + "\n".join(debug_log) + "</pre>"
-        html += "<h3>Sample raw HTML (first 500 chars)</h3><pre>" + response.text[:500].replace("<", "&lt;") + "</pre>"
-
-        return html
-
-    except Exception as e:
-        debug_text = "\n".join(debug_log)
-        return f"<h1>❌ Error</h1><pre>{e}</pre><hr><pre>{debug_text}</pre>"
+# Display results
+print("\n🔍 Search Results:\n")
+if matched_articles:
+    for article in matched_articles:
+        print(f"📰 {article['title']}")
+        print(f"📅 {article['published']}")
+        print(f"🔗 {article['link']}")
+        print("-" * 50)
+else:
+    print("❗ No articles found mentioning 'Belt and Road'.")
