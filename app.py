@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string
+from flask import Flask
 import requests
 from bs4 import BeautifulSoup
 
@@ -12,18 +12,18 @@ def home():
 
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
-        debug_log.append(f"🔍 Sending request to BBC Search URL: {BBC_SEARCH_URL}")
         response = requests.get(BBC_SEARCH_URL, headers=headers, timeout=10)
 
-        debug_log.append(f"📡 Response status: {response.status_code}")
-        debug_log.append(f"📦 Content size: {len(response.content)} bytes")
-
-        response.raise_for_status()
+        status_code = response.status_code
+        content_length = len(response.content)
+        raw_html = response.text[:1000]
 
         soup = BeautifulSoup(response.text, "html.parser")
+        article_tags = soup.select("article a[href]")
+        article_count = len(article_tags)
 
         articles = []
-        for item in soup.select("article a[href]"):
+        for item in article_tags:
             title = item.get_text(strip=True)
             link = item["href"]
             if title and link and "www.bbc." in link:
@@ -31,21 +31,20 @@ def home():
             if len(articles) >= 10:
                 break
 
-        debug_log.append(f"📰 Articles found: {len(articles)}")
-
-        html = "<h1>BBC Articles on Belt and Road Initiative</h1><ul>"
+        # Build HTML output
+        output = f"<h1>BBC Articles on Belt and Road Initiative</h1>"
+        output += f"<p>🛰️ Status: {status_code}</p>"
+        output += f"<p>📦 Content Size: {content_length} bytes</p>"
+        output += f"<p>🔍 Links Found: {article_count}</p>"
+        output += "<ul>"
         for title, link in articles:
-            html += f'<li><a href="{link}" target="_blank">{title}</a></li>'
-        html += "</ul><hr>"
+            output += f'<li><a href="{link}" target="_blank">{title}</a></li>'
+        output += "</ul>"
 
-        # Add debug section
-        html += "<h2>Debug Info</h2><pre>" + "\n".join(debug_log) + "</pre>"
-        html += "<h3>Sample of raw HTML response (first 500 chars)</h3><pre>" + response.text[:500] + "</pre>"
+        output += "<hr><h2>🧪 Debug Info</h2>"
+        output += "<pre>" + raw_html + "</pre>"
 
-        return html
-
-    except requests.exceptions.RequestException as req_err:
-        return f"<h1>❌ Network error</h1><pre>{req_err}</pre><hr><pre>{'\n'.join(debug_log)}</pre>"
+        return output
 
     except Exception as e:
-        return f"<h1>❌ General error</h1><pre>{e}</pre><hr><pre>{'\n'.join(debug_log)}</pre>"
+        return f"<h1>❌ Error</h1><pre>{e}</pre>"
