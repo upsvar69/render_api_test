@@ -1,76 +1,64 @@
+from flask import Flask
 import requests
-from flask import Flask, jsonify
-import os
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
+GOOGLE_SEARCH_URL = "https://www.google.com/search?q=site:bbc.com+%22Belt+and+Road+Initiative%22"
+
 @app.route("/")
-def get_news():
-    print("🚀 Starting request...")
-
-    CURRENTS_API_KEY = os.getenv("CURRENTS_API_KEY")
-    if not CURRENTS_API_KEY:
-        print("❌ API key not found in environment variables!")
-        return jsonify({"error": "❌ CURRENTS_API_KEY not set"}), 500
-
-    print("🔑 API key loaded successfully.")
-
-    SEARCH_QUERY = "belt and road"
-    API_ENDPOINT = "https://api.currentsapi.services/v1/search"
-    params = {
-        "keywords": SEARCH_QUERY,
-        "language": "en"
-    }
-
+def home():
     headers = {
-        "Authorization": CURRENTS_API_KEY
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
     }
 
-    print("🌐 Connecting to Currents API...")
-    print("📍 Endpoint:", API_ENDPOINT)
-    print("🔐 Headers:", headers)
-    print("🧾 Params:", params)
+    debug_log = []
+    articles = []
 
     try:
-        response = requests.get(API_ENDPOINT, headers=headers, params=params)
-        print(f"📡 Response Status Code: {response.status_code}")
-        print("🔍 Raw response text (truncated):", response.text[:300])
+        debug_log.append("🔍 Sending request to Google search...")
+        response = requests.get(GOOGLE_SEARCH_URL, headers=headers, timeout=10)
+        debug_log.append(f"📡 Google response status: {response.status_code}")
+        debug_log.append(f"📦 Content size: {len(response.content)} bytes")
 
-        if response.status_code != 200:
-            print("⚠️ Non-200 status code received.")
-            return jsonify({"error": "⚠️ Failed to fetch data from Currents API", "details": response.text}), response.status_code
+        soup = BeautifulSoup(response.text, "html.parser")
 
-        try:
-            data = response.json()
-            print("📦 Successfully parsed JSON.")
-        except Exception as json_err:
-            print("❌ Failed to parse JSON:", json_err)
-            return jsonify({"error": "❌ Failed to parse JSON", "details": response.text}), 500
+        result_blocks = soup.select("div.yuRUbf a[href]")
+        debug_log.append(f"🔍 Found {len(result_blocks)} <a> tags inside div.yuRUbf")
+
+        found_titles = 0
+        for idx, a in enumerate(result_blocks):
+            debug_log.append(f"🔗 Checking link #{idx + 1}")
+            title_tag = a.find("h3")
+            if not title_tag:
+                debug_log.append("   ❌ No <h3> tag inside <a>")
+                continue
+
+            title = title_tag.get_text(strip=True)
+            link = a.get("href")
+
+            if "bbc.com" not in link:
+                debug_log.append(f"   ⚠️ Link does not point to bbc.com: {link}")
+                continue
+
+            debug_log.append(f"   ✅ Found BBC article: {title}")
+            articles.append((title, link))
+            found_titles += 1
+
+            if found_titles >= 10:
+                break
+
+        html = "<h1>🔗 BBC Articles on Belt and Road Initiative Again (via Google)</h1><ul>"
+        for title, link in articles:
+            html += f'<li><a href="{link}" target="_blank">{title}</a></li>'
+        html += "</ul>"
+
+        html += "<hr><h2>🧪 Debug Info</h2><pre>" + "\n".join(debug_log) + "</pre>"
+        html += "<h3>Sample raw HTML (first 500 chars)</h3><pre>" + response.text[:500].replace("<", "&lt;") + "</pre>"
+
+        return html
 
     except Exception as e:
-        print("❌ Exception occurred during request:", e)
-        return jsonify({"error": "❌ Failed to fetch news due to exception."}), 500
-
-    if "news" not in data or not data["news"]:
-        print("❗ No articles found in API response.")
-        return jsonify({"message": f"❗ No articles found mentioning '{SEARCH_QUERY}'."}), 200
-
-    print(f"✅ Found {len(data['news'])} articles mentioning '{SEARCH_QUERY}'.")
-
-    articles = [
-        {
-            "title": article.get("title"),
-            "url": article.get("url"),
-            "source": article.get("source"),
-            "published": article.get("published")
-        }
-        for article in data["news"][:5]
-    ]
-
-    return jsonify({
-        "message": f"🔍 Top {len(articles)} articles mentioning '{SEARCH_QUERY}':",
-        "articles": articles
-    }), 200
-
-if __name__ == "__main__":
-    app.run(debug=True)
+        debug_text = "\n".join(debug_log)
+        return f"<h1>❌ Error</h1><pre>{e}</pre><hr><pre>{debug_text}</pre>"
