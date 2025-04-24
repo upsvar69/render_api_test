@@ -24,14 +24,13 @@ def home():
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        for g in soup.select("div.g"):
-            link_tag = g.find("a", href=True)
-            title_tag = g.find("h3")
-            if link_tag and title_tag:
-                link = link_tag["href"]
-                title = title_tag.get_text(strip=True)
-                if "www.bbc." in link:
-                    articles.append((title, link))
+        # New selector: all visible <a> tags with a heading child
+        for a in soup.find_all("a", href=True):
+            h3 = a.find("h3")
+            if h3 and "www.bbc." in a["href"]:
+                title = h3.get_text(strip=True)
+                link = a["href"]
+                articles.append((title, link))
             if len(articles) >= 10:
                 break
 
