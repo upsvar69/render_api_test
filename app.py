@@ -1,49 +1,40 @@
-from flask import Flask
+from flask import Flask, render_template_string
 import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-URLS = {
-    "DBnomics": "https://api.db.nomics.world/v22/series/NBS/A_A060F01/A060F010B",
-    "BBC": "https://www.bbc.com",
-    "Reuters": "https://www.reuters.com",
-    "Al Jazeera": "https://www.aljazeera.com",
-    "NPR": "https://www.npr.org",
-}
-
-
-@app.route("/test")
-
-def test_api():
-    results = []
-    for name, url in URLS.items():
-        try:
-            response = requests.get(url, timeout=5)
-            results.append(f"✅ <strong>{name}</strong>: Status {response.status_code}")
-        except Exception as e:
-            results.append(f"❌ <strong>{name}</strong>: Error - {e}")
-    return "<br><br>".join(results)
-"""
-def test_api():
-    url = "https://api.db.nomics.world/v22/series/NBS/A_A060F01/A060F010B"
-    try:
-        response = requests.get(url, timeout=5)
-        return f"✅ Status: {response.status_code}<br><br>{response.text[:500]}"
-    except Exception as e:
-        return f"❌ Error: {e}"
-"""
-
+BBC_SEARCH_URL = "https://www.bbc.co.uk/search?q=Belt+and+Road+Initiative"
 
 @app.route("/")
 def home():
-    return (
-        "Welcome to the API test app!<br>"
-        "Visit <code>/test</code> to run connectivity checks for:<br>"
-        "<ul>"
-        "<li>DBnomics</li>"
-        "<li>BBC</li>"
-        "<li>Reuters</li>"
-        "<li>Al Jazeera</li>"
-        "<li>NPR</li>"
-        "</ul>"
-    )
+    try:
+        # Get search results page
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(BBC_SEARCH_URL, headers=headers, timeout=10)
+        response.raise_for_status()
+
+        # Parse HTML
+        soup = BeautifulSoup(response.text, "html.parser")
+        articles = []
+
+        # Find article links and titles
+        for item in soup.select("article a[href]"):
+            title = item.get_text(strip=True)
+            link = item["href"]
+            if title and link and "www.bbc." in link:
+                articles.append((title, link))
+            if len(articles) >= 10:
+                break
+
+        # Render basic HTML with articles
+        html = "<h1>BBC Articles on Belt and Road Initiative</h1><ul>"
+        for title, link in articles:
+            html += f'<li><a href="{link}" target="_blank">{title}</a></li>'
+        html += "</ul>"
+
+        return html
+
+    except Exception as e:
+        return f"<h1>Error fetching articles</h1><p>{e}</p>"
+
