@@ -23,20 +23,21 @@ def home():
         debug_log.append(f"📦 Content size: {len(response.content)} bytes")
 
         soup = BeautifulSoup(response.text, "html.parser")
+        results = soup.select("div.MjjYud")
 
-        # Match the real Google structure
-        result_blocks = soup.select("div.yuRUbf a[href]")
+        for result in results:
+            link_tag = result.select_one("div.yuRUbf a[href]")
+            title_tag = link_tag.find("h3") if link_tag else None
 
-        for a in result_blocks:
-            title_tag = a.find("h3")
-            if title_tag and "bbc.com" in a["href"]:
+            if link_tag and title_tag and "bbc.com" in link_tag["href"]:
                 title = title_tag.get_text(strip=True)
-                link = a["href"]
+                link = link_tag["href"]
                 articles.append((title, link))
+
             if len(articles) >= 10:
                 break
 
-        html = "<h1>🔗 BBC Articles on Belt and Road Initiative Again(via Google)</h1><ul>"
+        html = "<h1>🔗 BBC Articles on Belt and Road Initiative Again (via Google)</h1><ul>"
         for title, link in articles:
             html += f'<li><a href="{link}" target="_blank">{title}</a></li>'
         html += "</ul>"
