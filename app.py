@@ -1,49 +1,46 @@
+from flask import Flask, jsonify
 import feedparser
 
-# List of RSS feeds to check
-RSS_FEEDS = {
-    "World": "https://feeds.bbci.co.uk/news/world/rss.xml",
-    "Asia": "https://feeds.bbci.co.uk/news/world/asia/rss.xml",
-    "Top Stories": "https://feeds.bbci.co.uk/news/rss.xml"
+app = Flask(__name__)
+
+BBC_FEEDS = {
+    "World": "http://feeds.bbci.co.uk/news/world/rss.xml",
+    "Asia": "http://feeds.bbci.co.uk/news/world/asia/rss.xml",
+    "Top Stories": "http://feeds.bbci.co.uk/news/rss.xml",
 }
 
-KEYWORD = "belt and road"
-MAX_RESULTS = 5
+KEYWORDS = ["belt and road", "belt & road", "一带一路"]
 
-print("🔗 BBC Articles on Belt and Road Initiative (via RSS)")
-print("🧪 Debug Info")
+def fetch_articles():
+    found_articles = []
+    print("🔍 Search Results:")
+    for name, url in BBC_FEEDS.items():
+        print(f"🌐 Connecting to {name} feed...")
+        feed = feedparser.parse(url)
+        if not feed.entries:
+            print(f"⚠️ No entries found in {name}")
+            continue
+        print(f"✅ Successfully parsed {len(feed.entries)} entries from {name}")
+        for entry in feed.entries:
+            title = entry.get("title", "").lower()
+            summary = entry.get("summary", "").lower()
+            if any(keyword in title or keyword in summary for keyword in KEYWORDS):
+                found_articles.append({
+                    "title": entry.get("title"),
+                    "link": entry.get("link"),
+                    "published": entry.get("published", "N/A")
+                })
+        if len(found_articles) >= 5:
+            break
+    return found_articles[:5]
 
-matched_articles = []
+@app.route("/")
+def index():
+    print("🔗 BBC Articles on Belt and Road Initiative (via RSS)")
+    articles = fetch_articles()
+    if not articles:
+        return jsonify({"message": "❗ No articles found mentioning 'Belt and Road'."}), 200
+    return jsonify({"articles": articles}), 200
 
-for name, url in RSS_FEEDS.items():
-    print(f"🌐 Connecting to {name} feed...")
-    feed = feedparser.parse(url)
-
-    if feed.bozo:
-        print(f"❌ Failed to parse feed: {name}")
-        continue
-
-    print(f"✅ Successfully parsed {len(feed.entries)} entries from {name}")
-
-    for entry in feed.entries:
-        if KEYWORD.lower() in entry.title.lower() or KEYWORD.lower() in entry.get("summary", "").lower():
-            matched_articles.append({
-                "title": entry.title,
-                "link": entry.link,
-                "published": entry.get("published", "No date")
-            })
-            if len(matched_articles) >= MAX_RESULTS:
-                break
-    if len(matched_articles) >= MAX_RESULTS:
-        break
-
-# Display results
-print("\n🔍 Search Results:\n")
-if matched_articles:
-    for article in matched_articles:
-        print(f"📰 {article['title']}")
-        print(f"📅 {article['published']}")
-        print(f"🔗 {article['link']}")
-        print("-" * 50)
-else:
-    print("❗ No articles found mentioning 'Belt and Road'.")
+if __name__ == "__main__":
+    app.run(debug=True)
