@@ -23,18 +23,30 @@ def home():
         debug_log.append(f"📦 Content size: {len(response.content)} bytes")
 
         soup = BeautifulSoup(response.text, "html.parser")
-        results = soup.select("div.MjjYud")
 
-        for result in results:
-            link_tag = result.select_one("div.yuRUbf a[href]")
-            title_tag = link_tag.find("h3") if link_tag else None
+        result_blocks = soup.select("div.yuRUbf a[href]")
+        debug_log.append(f"🔍 Found {len(result_blocks)} <a> tags inside div.yuRUbf")
 
-            if link_tag and title_tag and "bbc.com" in link_tag["href"]:
-                title = title_tag.get_text(strip=True)
-                link = link_tag["href"]
-                articles.append((title, link))
+        found_titles = 0
+        for idx, a in enumerate(result_blocks):
+            debug_log.append(f"🔗 Checking link #{idx + 1}")
+            title_tag = a.find("h3")
+            if not title_tag:
+                debug_log.append("   ❌ No <h3> tag inside <a>")
+                continue
 
-            if len(articles) >= 10:
+            title = title_tag.get_text(strip=True)
+            link = a.get("href")
+
+            if "bbc.com" not in link:
+                debug_log.append(f"   ⚠️ Link does not point to bbc.com: {link}")
+                continue
+
+            debug_log.append(f"   ✅ Found BBC article: {title}")
+            articles.append((title, link))
+            found_titles += 1
+
+            if found_titles >= 10:
                 break
 
         html = "<h1>🔗 BBC Articles on Belt and Road Initiative Again (via Google)</h1><ul>"
@@ -43,7 +55,7 @@ def home():
         html += "</ul>"
 
         html += "<hr><h2>🧪 Debug Info</h2><pre>" + "\n".join(debug_log) + "</pre>"
-        html += "<h3>Sample raw HTML (first 500 chars)</h3><pre>" + response.text[:500] + "</pre>"
+        html += "<h3>Sample raw HTML (first 500 chars)</h3><pre>" + response.text[:500].replace("<", "&lt;") + "</pre>"
 
         return html
 
