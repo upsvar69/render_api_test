@@ -4,14 +4,19 @@ import os
 
 app = Flask(__name__)
 
-CURRENTS_API_KEY = os.getenv("CURRENTS_API_KEY")
-if not CURRENTS_API_KEY:
-    return jsonify({"error": "❌ CURRENTS_API_KEY not set"}), 500
-SEARCH_QUERY = "belt and road"
-API_ENDPOINT = f"https://api.currentsapi.services/v1/search?keywords={SEARCH_QUERY}&language=en"
+
 
 @app.route("/")
 def get_news():
+    CURRENTS_API_KEY = os.getenv("CURRENTS_API_KEY")
+    if not CURRENTS_API_KEY:
+        return jsonify({"error": "❌ CURRENTS_API_KEY not set"}), 500
+    
+    SEARCH_QUERY = "belt and road"
+    API_ENDPOINT = f"https://api.currentsapi.services/v1/search?keywords={SEARCH_QUERY}&language=en"
+
+    
+    
     print("🌐 Connecting to Currents API...")
     try:
         response = requests.get(
