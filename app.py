@@ -4,47 +4,46 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-BBC_SEARCH_URL = "https://www.bbc.co.uk/search?q=Belt+and+Road+Initiative"
+GOOGLE_SEARCH_URL = "https://www.google.com/search?q=site:bbc.com+%22Belt+and+Road+Initiative%22"
 
 @app.route("/")
 def home():
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
+    }
+
     debug_log = []
+    articles = []
 
     try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(BBC_SEARCH_URL, headers=headers, timeout=10)
-
-        status_code = response.status_code
-        content_length = len(response.content)
-        raw_html = response.text[:1000]
+        debug_log.append("🔍 Sending request to Google search...")
+        response = requests.get(GOOGLE_SEARCH_URL, headers=headers, timeout=10)
+        debug_log.append(f"📡 Google response status: {response.status_code}")
+        debug_log.append(f"📦 Content size: {len(response.content)} bytes")
 
         soup = BeautifulSoup(response.text, "html.parser")
-        article_tags = soup.select("article a[href]")
-        article_count = len(article_tags)
 
-        articles = []
-        for item in article_tags:
-            title = item.get_text(strip=True)
-            link = item["href"]
-            if title and link and "www.bbc." in link:
-                articles.append((title, link))
+        for g in soup.select("div.g"):
+            link_tag = g.find("a", href=True)
+            title_tag = g.find("h3")
+            if link_tag and title_tag:
+                link = link_tag["href"]
+                title = title_tag.get_text(strip=True)
+                if "www.bbc." in link:
+                    articles.append((title, link))
             if len(articles) >= 10:
                 break
 
-        # Build HTML output
-        output = f"<h1>BBC Articles on Belt and Road Initiative</h1>"
-        output += f"<p>🛰️ Status: {status_code}</p>"
-        output += f"<p>📦 Content Size: {content_length} bytes</p>"
-        output += f"<p>🔍 Links Found: {article_count}</p>"
-        output += "<ul>"
+        html = "<h1>🔗 BBC Articles on Belt and Road Initiative (via Google)</h1><ul>"
         for title, link in articles:
-            output += f'<li><a href="{link}" target="_blank">{title}</a></li>'
-        output += "</ul>"
+            html += f'<li><a href="{link}" target="_blank">{title}</a></li>'
+        html += "</ul>"
 
-        output += "<hr><h2>🧪 Debug Info</h2>"
-        output += "<pre>" + raw_html + "</pre>"
+        html += "<hr><h2>🧪 Debug Info</h2><pre>" + "\n".join(debug_log) + "</pre>"
+        html += "<h3>Sample raw HTML (first 500 chars)</h3><pre>" + response.text[:500] + "</pre>"
 
-        return output
+        return html
 
     except Exception as e:
-        return f"<h1>❌ Error</h1><pre>{e}</pre>"
+        return f"<h1>❌ Error</h1><pre>{e}</pre><hr><pre>{'\n'.join(debug_log)}</pre>"
