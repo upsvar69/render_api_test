@@ -67,7 +67,8 @@ def home():
 
     except Exception as e:
         debug_log.append(f"❌ Exception occurred: {e}")
-        return f"<h1>❌ Error</h1><pre>{e}</pre><hr><pre>{'\n'.join(debug_log)}</pre>"
+        debug_text = "\n".join(debug_log)
+        return f"<h1>❌ Error</h1><pre>{e}</pre><hr><pre>{debug_text}</pre>"
 
 if __name__ == "__main__":
     app.run(debug=True)
