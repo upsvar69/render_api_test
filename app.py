@@ -6,7 +6,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import os
 import time
-
+import subprocess
 
 app = Flask(__name__)
 
@@ -16,9 +16,10 @@ GOOGLE_SEARCH_URL = f"https://www.google.com/search?q={SEARCH_QUERY.replace(' ',
 @app.route("/")
 def home():
     debug_log = ["🔍 Launching headless Chrome..."]
-    import subprocess
+    
+    # Check installed binaries
     debug_log.append("📝 Installed binaries:\n" + subprocess.getoutput("ls -la /usr/bin | grep chrome"))
-    debug_log.append("🧾 /usr/bin/google-chrome -> " + subprocess.getoutput("ls -l /usr/bin/google-chrome || echo 'not found'"))
+    
     articles = []
 
     try:
@@ -30,24 +31,12 @@ def home():
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920x1080")
         chrome_options.add_argument("--user-agent=Mozilla/5.0")
-
-        # Use known fallback Chrome paths instead of relying on 'which'
-        possible_paths = [
-            "/usr/bin/google-chrome",
-            "/usr/bin/google-chrome-stable",
-            "/opt/google/chrome/google-chrome"
-        ]
-        chrome_path = None
-        for path in possible_paths:
-            if os.path.exists(path):
-                chrome_path = path
-                break
-
-        if chrome_path:
-            chrome_options.binary_location = chrome_path
-            debug_log.append(f"📍 Using Chrome binary at: {chrome_path}")
-        else:
-            debug_log.append("❌ No Chrome binary found in known locations.")
+        
+        # Explicitly set the Chrome binary location
+        chrome_path = "/usr/bin/google-chrome-stable"  # Explicit path to Chrome binary
+        debug_log.append(f"📍 Explicitly set Chrome binary path: {chrome_path}")
+        
+        chrome_options.binary_location = chrome_path
 
         # Initialize Chrome with webdriver_manager
         driver = webdriver.Chrome(
