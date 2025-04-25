@@ -31,7 +31,9 @@ def home():
         chrome_options.add_argument("--user-agent=Mozilla/5.0")
         
         # Explicitly set binary location
-        chrome_options.binary_location = "/usr/bin/google-chrome"
+        chrome_path = subprocess.getoutput("which google-chrome || which google-chrome-stable")
+        debug_log.append(f"📍 Detected Chrome binary: {chrome_path}")
+        chrome_options.binary_location = chrome_path
 
         # Initialize Chrome with webdriver_manager
         driver = webdriver.Chrome(
