@@ -18,6 +18,7 @@ def home():
     debug_log = ["🔍 Launching headless Chrome..."]
     import subprocess
     debug_log.append("📝 Installed binaries:\n" + subprocess.getoutput("ls -la /usr/bin | grep chrome"))
+    debug_log.append("🧾 /usr/bin/google-chrome -> " + subprocess.getoutput("ls -l /usr/bin/google-chrome || echo 'not found'"))
     articles = []
 
     try:
@@ -29,11 +30,24 @@ def home():
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920x1080")
         chrome_options.add_argument("--user-agent=Mozilla/5.0")
-        
-        # Explicitly set binary location
-        chrome_path = subprocess.getoutput("which google-chrome || which google-chrome-stable")
-        debug_log.append(f"📍 Detected Chrome binary: {chrome_path}")
-        chrome_options.binary_location = chrome_path
+
+        # Use known fallback Chrome paths instead of relying on 'which'
+        possible_paths = [
+            "/usr/bin/google-chrome",
+            "/usr/bin/google-chrome-stable",
+            "/opt/google/chrome/google-chrome"
+        ]
+        chrome_path = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                chrome_path = path
+                break
+
+        if chrome_path:
+            chrome_options.binary_location = chrome_path
+            debug_log.append(f"📍 Using Chrome binary at: {chrome_path}")
+        else:
+            debug_log.append("❌ No Chrome binary found in known locations.")
 
         # Initialize Chrome with webdriver_manager
         driver = webdriver.Chrome(

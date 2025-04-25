@@ -2,7 +2,7 @@ services:
   - type: web
     name: render-api-test
     env: python
-     buildCommand: |
+    buildCommand: |
       apt-get update && \
       apt-get install -y wget unzip curl gnupg software-properties-common && \
       curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux.gpg && \
