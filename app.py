@@ -4,6 +4,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+import os
 import time
 
 app = Flask(__name__)
@@ -25,6 +26,9 @@ def home():
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920x1080")
         chrome_options.add_argument("--user-agent=Mozilla/5.0")
+        
+        # Explicitly set binary location
+        chrome_options.binary_location = "/usr/bin/chromium-browser"
 
         # Initialize Chrome with webdriver_manager
         driver = webdriver.Chrome(
