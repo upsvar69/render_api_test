@@ -28,7 +28,7 @@ def home():
         chrome_options.add_argument("--user-agent=Mozilla/5.0")
         
         # Explicitly set binary location
-        chrome_options.binary_location = "/usr/bin/chromium-browser"
+        chrome_options.binary_location = "/usr/bin/google-chrome-stable"
 
         # Initialize Chrome with webdriver_manager
         driver = webdriver.Chrome(
