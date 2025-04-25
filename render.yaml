@@ -2,5 +2,15 @@ services:
   - type: web
     name: render-api-test
     env: python
-    buildCommand: "pip install -r requirements.txt"
+     buildCommand: |
+      apt-get update && \
+      apt-get install -y wget unzip curl gnupg && \
+      curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux.gpg && \
+      echo "deb [signed-by=/usr/share/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+      apt-get update && \
+      apt-get install -y google-chrome-stable && \
+      pip install -r requirements.txt
     startCommand: "gunicorn app:app"
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "TRUE"

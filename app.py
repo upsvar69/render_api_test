@@ -1,64 +1,68 @@
 from flask import Flask
-import requests
-from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+import time
 
 app = Flask(__name__)
 
-GOOGLE_SEARCH_URL = "https://www.google.com/search?q=site:bbc.com+%22Belt+and+Road+Initiative%22"
+SEARCH_QUERY = 'site:bbc.com "Belt and Road Initiative"'
+GOOGLE_SEARCH_URL = f"https://www.google.com/search?q={SEARCH_QUERY.replace(' ', '+')}"
 
 @app.route("/")
 def home():
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
-    }
-
-    debug_log = []
+    debug_log = ["🔍 Launching headless Chrome..."]
     articles = []
 
     try:
-        debug_log.append("🔍 Sending request to Google search...")
-        response = requests.get(GOOGLE_SEARCH_URL, headers=headers, timeout=10)
-        debug_log.append(f"📡 Google response status: {response.status_code}")
-        debug_log.append(f"📦 Content size: {len(response.content)} bytes")
+        # Set up headless Chrome
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--window-size=1920x1080")
+        chrome_options.add_argument("--user-agent=Mozilla/5.0")
 
-        soup = BeautifulSoup(response.text, "html.parser")
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
-        result_blocks = soup.select("div.yuRUbf a[href]")
-        debug_log.append(f"🔍 Found {len(result_blocks)} <a> tags inside div.yuRUbf")
+        debug_log.append("🌐 Navigating to Google...")
+        driver.get(GOOGLE_SEARCH_URL)
+        time.sleep(3)  # Wait for JavaScript to load content
 
-        found_titles = 0
-        for idx, a in enumerate(result_blocks):
-            debug_log.append(f"🔗 Checking link #{idx + 1}")
-            title_tag = a.find("h3")
-            if not title_tag:
-                debug_log.append("   ❌ No <h3> tag inside <a>")
+        results = driver.find_elements(By.CSS_SELECTOR, "div.yuRUbf a[href]")
+        debug_log.append(f"🔍 Found {len(results)} results.")
+
+        for idx, a_tag in enumerate(results[:10]):
+            title_element = a_tag.find_element(By.TAG_NAME, "h3")
+            if not title_element:
+                debug_log.append(f"   ❌ No <h3> found in result #{idx + 1}")
                 continue
 
-            title = title_tag.get_text(strip=True)
-            link = a.get("href")
+            title = title_element.text.strip()
+            url = a_tag.get_attribute("href")
 
-            if "bbc.com" not in link:
-                debug_log.append(f"   ⚠️ Link does not point to bbc.com: {link}")
+            if "bbc.com" not in url:
+                debug_log.append(f"   ⚠️ Skipping non-BBC link: {url}")
                 continue
 
-            debug_log.append(f"   ✅ Found BBC article: {title}")
-            articles.append((title, link))
-            found_titles += 1
+            debug_log.append(f"   ✅ #{idx + 1}: {title}")
+            articles.append((title, url))
 
-            if found_titles >= 10:
-                break
+        driver.quit()
 
-        html = "<h1>🔗 BBC Articles on Belt and Road Initiative Again (via Google)</h1><ul>"
-        for title, link in articles:
-            html += f'<li><a href="{link}" target="_blank">{title}</a></li>'
+        html = "<h1>🔗 BBC Articles on Belt and Road Initiative (via Google + Selenium)</h1><ul>"
+        for title, url in articles:
+            html += f'<li><a href="{url}" target="_blank">{title}</a></li>'
         html += "</ul>"
 
         html += "<hr><h2>🧪 Debug Info</h2><pre>" + "\n".join(debug_log) + "</pre>"
-        html += "<h3>Sample raw HTML (first 500 chars)</h3><pre>" + response.text[:500].replace("<", "&lt;") + "</pre>"
-
         return html
 
     except Exception as e:
-        debug_text = "\n".join(debug_log)
-        return f"<h1>❌ Error</h1><pre>{e}</pre><hr><pre>{debug_text}</pre>"
+        debug_log.append(f"❌ Exception occurred: {e}")
+        return "<h1>❌ Error</h1><pre>{}</pre><hr><pre>{}</pre>".format(e, "\n".join(debug_log))
+
+if __name__ == "__main__":
+    app.run(debug=True)

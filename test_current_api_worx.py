@@ -2,6 +2,49 @@
 {
     "details": "{\"status\":\"429\",\"msg\":\"API quota exceeded. Upgrade plan or wait for reset.\"}",
     "error": "⚠️ Failed to fetch data from Currents API"
+
+
+    Ahhh there it is — this line says it all:
+
+    json
+    Kopírovať
+    Upraviť
+    "msg":"API quota exceeded. Upgrade plan or wait for reset."
+    You’ve hit your Currents API free plan limit (status code 429 = Too Many Requests). 😅 Nothing’s wrong with your code anymore — the API is just blocking you until:
+
+    Your quota resets (usually daily or monthly — check CurrentsAPI dashboard for details), or
+
+    You upgrade your plan to get more requests.
+
+    Options now:
+    Option 1: Wait for quota reset
+    If you’re just testing, this might be fine. Come back later and it should start working again.
+
+    Option 2: Create a new API key
+    If this is just a sandbox account and you're okay with starting fresh, you can:
+
+    Create a new Currents API account.
+
+    Use the new key.
+
+    Update your Render environment variable with the new CURRENTS_API_KEY.
+
+    Option 3: Upgrade your Currents API plan
+    If you’re going into production or want higher limits, upgrading is the most stable way.
+
+    If you want to test code functionality without hitting CurrentsAPI again, I can help you mock the API response using test data so you can still build the front end or check how your JSON output looks.
+
+    Want to go that route while waiting?
+
+
+
+
+
+
+
+    Tvoje slová:
+    i see. lets put it on hold. i ll remain this to a different name and you write me a new app.py to access the google and we will finish the selenium hack to get around the javascript obstacle we finished at before. do you remember the working google connection or do you want me to give it back to you?
+
 }
 """
 
