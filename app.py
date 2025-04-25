@@ -17,15 +17,20 @@ def home():
     articles = []
 
     try:
-        # Set up headless Chrome
+        # Setup Chrome options for headless operation in containers
         chrome_options = Options()
         chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920x1080")
         chrome_options.add_argument("--user-agent=Mozilla/5.0")
 
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        # Initialize Chrome with webdriver_manager
+        driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=chrome_options
+        )
 
         debug_log.append("🌐 Navigating to Google...")
         driver.get(GOOGLE_SEARCH_URL)
@@ -35,23 +40,23 @@ def home():
         debug_log.append(f"🔍 Found {len(results)} results.")
 
         for idx, a_tag in enumerate(results[:10]):
-            title_element = a_tag.find_element(By.TAG_NAME, "h3")
-            if not title_element:
+            try:
+                title_element = a_tag.find_element(By.TAG_NAME, "h3")
+                title = title_element.text.strip()
+                url = a_tag.get_attribute("href")
+
+                if "bbc.com" in url:
+                    articles.append((title, url))
+                    debug_log.append(f"   ✅ #{idx + 1}: {title}")
+                else:
+                    debug_log.append(f"   ⚠️ Skipping non-BBC link: {url}")
+            except:
                 debug_log.append(f"   ❌ No <h3> found in result #{idx + 1}")
                 continue
 
-            title = title_element.text.strip()
-            url = a_tag.get_attribute("href")
-
-            if "bbc.com" not in url:
-                debug_log.append(f"   ⚠️ Skipping non-BBC link: {url}")
-                continue
-
-            debug_log.append(f"   ✅ #{idx + 1}: {title}")
-            articles.append((title, url))
-
         driver.quit()
 
+        # Build HTML response
         html = "<h1>🔗 BBC Articles on Belt and Road Initiative (via Google + Selenium)</h1><ul>"
         for title, url in articles:
             html += f'<li><a href="{url}" target="_blank">{title}</a></li>'
@@ -62,7 +67,7 @@ def home():
 
     except Exception as e:
         debug_log.append(f"❌ Exception occurred: {e}")
-        return "<h1>❌ Error</h1><pre>{}</pre><hr><pre>{}</pre>".format(e, "\n".join(debug_log))
+        return f"<h1>❌ Error</h1><pre>{e}</pre><hr><pre>{'\n'.join(debug_log)}</pre>"
 
 if __name__ == "__main__":
     app.run(debug=True)
