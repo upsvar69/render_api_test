@@ -6,8 +6,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import os
 import time
-import subprocess
-debug_log.append("📝 Installed binaries:\n" + subprocess.getoutput("ls -la /usr/bin | grep chrome"))
+
 
 app = Flask(__name__)
 
@@ -17,6 +16,8 @@ GOOGLE_SEARCH_URL = f"https://www.google.com/search?q={SEARCH_QUERY.replace(' ',
 @app.route("/")
 def home():
     debug_log = ["🔍 Launching headless Chrome..."]
+    import subprocess
+    debug_log.append("📝 Installed binaries:\n" + subprocess.getoutput("ls -la /usr/bin | grep chrome"))
     articles = []
 
     try:
