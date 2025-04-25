@@ -6,6 +6,8 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import os
 import time
+import subprocess
+debug_log.append("📝 Installed binaries:\n" + subprocess.getoutput("ls -la /usr/bin | grep chrome"))
 
 app = Flask(__name__)
 
@@ -28,7 +30,7 @@ def home():
         chrome_options.add_argument("--user-agent=Mozilla/5.0")
         
         # Explicitly set binary location
-        chrome_options.binary_location = "/usr/bin/google-chrome-stable"
+        chrome_options.binary_location = "/usr/bin/google-chrome"
 
         # Initialize Chrome with webdriver_manager
         driver = webdriver.Chrome(
