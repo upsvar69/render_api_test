@@ -7,6 +7,16 @@ from webdriver_manager.chrome import ChromeDriverManager
 import os
 import time
 import subprocess
+import subprocess
+
+chrome_paths = subprocess.getoutput("find / -type f -name 'google-chrome' 2>/dev/null")
+print("🛠️ Found Chrome binaries:\n", chrome_paths)
+
+chrome_paths = subprocess.getoutput("find / -iname '*chrome*' 2>/dev/null")
+print("🛠️ Found Chrome-related files:\n", chrome_paths)
+
+
+
 
 app = Flask(__name__)
 
