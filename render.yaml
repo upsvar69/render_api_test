@@ -11,17 +11,15 @@ services:
       echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
       apt-get update || true && \
       apt-get install -y google-chrome-stable && \
-      # Verify installation and log binary path
+      # Check the path of Google Chrome
       echo "📍 Google Chrome binary path: $(which google-chrome)" && \
-      echo "🔍 Found Chrome: $(which google-chrome)" || echo "⚠️ Google Chrome install failed" && \
-      # Install Chromium
+      # Install Chromium if Chrome fails
       echo "🔧 Installing Chromium..." && \
       apt-get install -y chromium-browser && \
       ln -sf $(which chromium-browser) /usr/bin/chromium && \
-      # Verify installation and log binary path
+      # Check the path of Chromium
       echo "📍 Chromium binary path: $(which chromium)" && \
-      echo "🔍 Found Chromium: $(which chromium)" || echo "⚠️ Chromium install failed" && \
-      # Symlink google-chrome if needed
+      # Fallback symlink if Google Chrome isn't found
       if [ ! -f /usr/bin/google-chrome ]; then ln -s $(which chromium-browser) /usr/bin/google-chrome; fi && \
       # Python setup
       echo "🔧 Installing Python dependencies..." && \
