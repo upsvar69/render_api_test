@@ -16,17 +16,23 @@ GOOGLE_SEARCH_URL = f"https://www.google.com/search?q={SEARCH_QUERY.replace(' ',
 # === Utility functions ===
 
 def find_browser_binary():
+    """
+    This function now checks several common paths for Chrome/Chromium binaries
+    that might have been installed during the build process.
+    """
     possible_paths = [
-        "/opt/render/project/.render/chrome/opt/google/chrome",  # Path used by Render's environment
-        "/usr/bin/google-chrome-stable",  # Common path for Chrome on Linux
-        "/usr/bin/google-chrome",  # Sometimes used for Chrome in the default path
-        "/usr/bin/chromium-browser",  # If Chromium is used
-        "/usr/bin/chromium"  # Another path for Chromium
+        "/opt/render/project/.render/chrome/opt/google/chrome",  # Render Chrome path
+        "/usr/bin/google-chrome-stable",  # Google Chrome installed by apt
+        "/usr/bin/google-chrome",  # Google Chrome installed by apt
+        "/usr/bin/chromium-browser",  # Chromium installed by apt
+        "/usr/bin/chromium"  # Chromium binary
     ]
     
+    # Loop through the possible paths and check if the binary exists and is executable
     for path in possible_paths:
         if os.path.isfile(path) and os.access(path, os.X_OK):
             return path
+    
     return None
 
 def log_system_info():

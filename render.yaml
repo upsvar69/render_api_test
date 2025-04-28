@@ -17,6 +17,12 @@ services:
       ln -sf $(which chromium-browser) /usr/bin/chromium && \
       echo "📍 Chromium binary path: $(which chromium)" && \
       if [ ! -f /usr/bin/google-chrome ]; then ln -s $(which chromium-browser) /usr/bin/google-chrome; fi && \
+      # Scan for Chrome binaries and output results
+      echo "🛠️ Scanning entire filesystem for Chrome/Chromium binaries..." && \
+      find / -type f -iname '*chrome*' 2>/dev/null && \
+      # Check specific locations for Chrome and Chromium
+      echo "📄 /usr/bin Chrome entries:" && \
+      ls -la /usr/bin | grep chrome && \
       pip install --upgrade pip && \
       pip install -r requirements.txt
     startCommand: |
