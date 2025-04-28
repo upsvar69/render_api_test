@@ -23,6 +23,11 @@ services:
       # Check specific locations for Chrome and Chromium
       echo "📄 /usr/bin Chrome entries:" && \
       ls -la /usr/bin | grep chrome && \
+      # Additional debugging information
+      echo "📍 Checking installation of Google Chrome..." && \
+      dpkg -l | grep chrome && \
+      echo "📍 Checking installation of Chromium..." && \
+      dpkg -l | grep chromium && \
       pip install --upgrade pip && \
       pip install -r requirements.txt
     startCommand: |
