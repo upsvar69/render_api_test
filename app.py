@@ -7,33 +7,61 @@ from webdriver_manager.chrome import ChromeDriverManager
 import os
 import time
 import subprocess
-import subprocess
-
-chrome_paths = subprocess.getoutput("find / -type f -name 'google-chrome' 2>/dev/null")
-print("🛠️ Found Chrome binaries:\n", chrome_paths)
-
-chrome_paths = subprocess.getoutput("find / -iname '*chrome*' 2>/dev/null")
-print("🛠️ Found Chrome-related files:\n", chrome_paths)
-
-
-
 
 app = Flask(__name__)
 
 SEARCH_QUERY = 'site:bbc.com "Belt and Road Initiative"'
 GOOGLE_SEARCH_URL = f"https://www.google.com/search?q={SEARCH_QUERY.replace(' ', '+')}"
 
+# === Utility functions ===
+
+def find_browser_binary():
+    """
+    Try to locate Chrome or Chromium browser binary.
+    Prefer Google Chrome, fallback to Chromium.
+    """
+    possible_paths = [
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium"
+    ]
+    for path in possible_paths:
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            return path
+    return None
+
+def log_system_info():
+    """
+    Collect and return useful system info for debugging.
+    """
+    logs = []
+    logs.append("🛠️ Scanning for Chrome/Chromium binaries...")
+    found_chrome_binaries = subprocess.getoutput("find / -type f -iname '*chrome*' 2>/dev/null")
+    logs.append("🔎 Found Chrome-related files:\n" + found_chrome_binaries)
+    usr_bin_listing = subprocess.getoutput("ls -la /usr/bin | grep chrome")
+    logs.append("📄 /usr/bin Chrome entries:\n" + usr_bin_listing)
+    return logs
+
 @app.route("/")
 def home():
-    debug_log = ["🔍 Launching headless Chrome..."]
+    debug_log = []
     
-    # Check installed binaries
-    debug_log.append("📝 Installed binaries:\n" + subprocess.getoutput("ls -la /usr/bin | grep chrome"))
+    # Gather system info
+    debug_log += log_system_info()
+
+    # Find browser binary
+    chrome_path = find_browser_binary()
+    if not chrome_path:
+        debug_log.append("❌ No Chrome or Chromium binary found!")
+        chrome_path = "NOT FOUND"
+    else:
+        debug_log.append(f"📍 Browser binary selected: {chrome_path}")
     
     articles = []
 
     try:
-        # Setup Chrome options for headless operation in containers
+        # Setup Chrome options
         chrome_options = Options()
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
@@ -41,25 +69,24 @@ def home():
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920x1080")
         chrome_options.add_argument("--user-agent=Mozilla/5.0")
-        
-        # Explicitly set the Chrome binary location
-        chrome_path = "/usr/bin/google-chrome-stable"  # Explicit path to Chrome binary
-        debug_log.append(f"📍 Explicitly set Chrome binary path: {chrome_path}")
-        
-        chrome_options.binary_location = chrome_path
 
-        # Initialize Chrome with webdriver_manager
+        if chrome_path != "NOT FOUND":
+            chrome_options.binary_location = chrome_path
+
+        debug_log.append("🚀 Launching browser with Selenium...")
+
+        # Initialize Chrome driver
         driver = webdriver.Chrome(
             service=Service(ChromeDriverManager().install()),
             options=chrome_options
         )
 
-        debug_log.append("🌐 Navigating to Google...")
+        debug_log.append(f"🌐 Navigating to Google search: {GOOGLE_SEARCH_URL}")
         driver.get(GOOGLE_SEARCH_URL)
-        time.sleep(3)  # Wait for JavaScript to load content
+        time.sleep(3)
 
         results = driver.find_elements(By.CSS_SELECTOR, "div.yuRUbf a[href]")
-        debug_log.append(f"🔍 Found {len(results)} results.")
+        debug_log.append(f"🔍 Found {len(results)} search results.")
 
         for idx, a_tag in enumerate(results[:10]):
             try:
@@ -72,14 +99,13 @@ def home():
                     debug_log.append(f"   ✅ #{idx + 1}: {title}")
                 else:
                     debug_log.append(f"   ⚠️ Skipping non-BBC link: {url}")
-            except:
-                debug_log.append(f"   ❌ No <h3> found in result #{idx + 1}")
-                continue
+            except Exception as e:
+                debug_log.append(f"   ❌ Error processing result #{idx + 1}: {e}")
 
         driver.quit()
 
         # Build HTML response
-        html = "<h1>🔗 BBC Articles on Belt and Road Initiative (via Google + Selenium)</h1><ul>"
+        html = "<h1>🔗 BBC Articles on Belt and Road Initiative</h1><ul>"
         for title, url in articles:
             html += f'<li><a href="{url}" target="_blank">{title}</a></li>'
         html += "</ul>"
