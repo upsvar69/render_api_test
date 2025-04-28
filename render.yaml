@@ -3,30 +3,25 @@ services:
     name: render-api-test
     env: python
     buildCommand: |
-      # Update apt-get and install dependencies
       apt-get update && \
       apt-get install -y wget unzip curl gnupg software-properties-common && \
-      
-      # Install Google Chrome
       echo "🔧 Installing Google Chrome..." && \
       curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux.gpg && \
       echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
       apt-get update || true && \
       apt-get install -y google-chrome-stable && \
-      
-      # Ensure the path to Google Chrome is correct
+      # Check the path of Google Chrome
       echo "📍 Google Chrome binary path: $(which google-chrome)" && \
-      
-      # Install Python dependencies
-      echo "🔧 Installing Python dependencies..." && \
+      echo "🔧 Installing Chromium..." && \
+      apt-get install -y chromium-browser && \
+      ln -sf $(which chromium-browser) /usr/bin/chromium && \
+      echo "📍 Chromium binary path: $(which chromium)" && \
+      if [ ! -f /usr/bin/google-chrome ]; then ln -s $(which chromium-browser) /usr/bin/google-chrome; fi && \
       pip install --upgrade pip && \
-      pip install -r requirements.txt && \
-      
-      # Check that Chrome is installed
-      echo "🔧 Checking for Google Chrome and Chromium..." && \
-      which google-chrome || echo "Google Chrome not found!" && \
-      which chromium-browser || echo "Chromium not found!"
-    startCommand: "gunicorn app:app"
+      pip install -r requirements.txt
+    startCommand: |
+      export PATH="${PATH}:/opt/render/project/.render/chrome/opt/google/chrome" && \
+      gunicorn app:app
     envVars:
       - key: PYTHONUNBUFFERED
         value: "TRUE"

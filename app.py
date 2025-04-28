@@ -16,11 +16,8 @@ GOOGLE_SEARCH_URL = f"https://www.google.com/search?q={SEARCH_QUERY.replace(' ',
 # === Utility functions ===
 
 def find_browser_binary():
-    """
-    Try to locate Chrome or Chromium browser binary.
-    Prefer Google Chrome, fallback to Chromium.
-    """
     possible_paths = [
+        "/opt/render/project/.render/chrome/opt/google/chrome",  # Correct Chrome path
         "/usr/bin/google-chrome-stable",
         "/usr/bin/google-chrome",
         "/usr/bin/chromium-browser",
