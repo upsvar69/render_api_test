@@ -6,16 +6,25 @@ services:
       apt-get update && \
       apt-get install -y wget unzip curl gnupg software-properties-common && \
       # Install Google Chrome
+      echo "🔧 Installing Google Chrome..." && \
       curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux.gpg && \
       echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
       apt-get update || true && \
-      apt-get install -y google-chrome-stable || echo "⚠️ Google Chrome install failed, fallback to Chromium" && \
-      # Install Chromium too
+      apt-get install -y google-chrome-stable && \
+      # Verify installation and log binary path
+      echo "📍 Google Chrome binary path: $(which google-chrome)" && \
+      echo "🔍 Found Chrome: $(which google-chrome)" || echo "⚠️ Google Chrome install failed" && \
+      # Install Chromium
+      echo "🔧 Installing Chromium..." && \
       apt-get install -y chromium-browser && \
       ln -sf $(which chromium-browser) /usr/bin/chromium && \
+      # Verify installation and log binary path
+      echo "📍 Chromium binary path: $(which chromium)" && \
+      echo "🔍 Found Chromium: $(which chromium)" || echo "⚠️ Chromium install failed" && \
       # Symlink google-chrome if needed
       if [ ! -f /usr/bin/google-chrome ]; then ln -s $(which chromium-browser) /usr/bin/google-chrome; fi && \
       # Python setup
+      echo "🔧 Installing Python dependencies..." && \
       pip install --upgrade pip && \
       pip install -r requirements.txt
     startCommand: "gunicorn app:app"
