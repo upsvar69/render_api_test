@@ -17,12 +17,13 @@ GOOGLE_SEARCH_URL = f"https://www.google.com/search?q={SEARCH_QUERY.replace(' ',
 
 def find_browser_binary():
     possible_paths = [
-        "/opt/render/project/.render/chrome/opt/google/chrome",  # Correct Chrome path
-        "/usr/bin/google-chrome-stable",
-        "/usr/bin/google-chrome",
-        "/usr/bin/chromium-browser",
-        "/usr/bin/chromium"
+        "/opt/render/project/.render/chrome/opt/google/chrome",  # Path used by Render's environment
+        "/usr/bin/google-chrome-stable",  # Common path for Chrome on Linux
+        "/usr/bin/google-chrome",  # Sometimes used for Chrome in the default path
+        "/usr/bin/chromium-browser",  # If Chromium is used
+        "/usr/bin/chromium"  # Another path for Chromium
     ]
+    
     for path in possible_paths:
         if os.path.isfile(path) and os.access(path, os.X_OK):
             return path
