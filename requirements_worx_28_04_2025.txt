@@ -1,0 +1,7 @@
+flask
+requests
+gunicorn
+beautifulsoup4
+feedparser
+selenium
+webdriver-manager

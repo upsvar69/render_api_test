@@ -1,38 +1,9 @@
 services:
   - type: web
-    name: render-api-test
-    env: python
-    buildCommand: |
-      apt-get update && \
-      apt-get install -y wget unzip curl gnupg software-properties-common && \
-      echo "🔧 Installing Google Chrome..." && \
-      curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux.gpg && \
-      echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
-      apt-get update || true && \
-      apt-get install -y google-chrome-stable && \
-      # Check the path of Google Chrome
-      echo "📍 Google Chrome binary path: $(which google-chrome)" && \
-      echo "🔧 Installing Chromium..." && \
-      apt-get install -y chromium-browser && \
-      ln -sf $(which chromium-browser) /usr/bin/chromium && \
-      echo "📍 Chromium binary path: $(which chromium)" && \
-      if [ ! -f /usr/bin/google-chrome ]; then ln -s $(which chromium-browser) /usr/bin/google-chrome; fi && \
-      # Scan for Chrome binaries and output results
-      echo "🛠️ Scanning entire filesystem for Chrome/Chromium binaries..." && \
-      find / -type f -iname '*chrome*' 2>/dev/null && \
-      # Check specific locations for Chrome and Chromium
-      echo "📄 /usr/bin Chrome entries:" && \
-      ls -la /usr/bin | grep chrome && \
-      # Additional debugging information
-      echo "📍 Checking installation of Google Chrome..." && \
-      dpkg -l | grep chrome && \
-      echo "📍 Checking installation of Chromium..." && \
-      dpkg -l | grep chromium && \
-      pip install --upgrade pip && \
-      pip install -r requirements.txt
-    startCommand: |
-      export PATH="${PATH}:/opt/render/project/.render/chrome/opt/google/chrome" && \
-      gunicorn app:app
+    name: selenium-google-scraper
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: PYTHONUNBUFFERED
         value: "TRUE"
