@@ -2,43 +2,26 @@ from flask import Flask
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 import time
 import selenium
 import os
-import subprocess
 
 app = Flask(__name__)
-
-def find_chrome():
-    try:
-        # Use `find` to search for chrome binary in the cache
-        result = subprocess.run(
-            ["find", "/opt/render/project/.render", "-type", "f", "-name", "google-chrome"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        path = result.stdout.strip()
-        if path:
-            print(f"🔍 Chrome binary found at: {path}")
-            return path
-        else:
-            print("⚠️ Chrome binary not found using grep/find.")
-            return None
-    except Exception as e:
-        print(f"❌ Error while searching for Chrome: {e}")
-        return None
 
 @app.route('/')
 def scrape_google():
     print(f"🧩 Selenium version: {selenium.__version__}")
 
+    # Paths for Chrome and Chromedriver on Render.com
     chrome_path = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"
-    if not os.path.isfile(chrome_path):
-        chrome_path = find_chrome()
-        if not chrome_path:
-            return {"error": "Chrome binary not found."}
+    driver_path = "/opt/render/project/.render/chrome/usr/bin/chromedriver"
+
+    if not os.path.exists(chrome_path):
+        print("⚠️ Chrome binary not found at expected path.")
+        return {"error": "Chrome binary not found."}
+    if not os.path.exists(driver_path):
+        print("⚠️ Chromedriver not found at expected path.")
+        return {"error": "Chromedriver not found."}
 
     try:
         options = webdriver.ChromeOptions()
@@ -48,7 +31,8 @@ def scrape_google():
         options.add_argument('--disable-dev-shm-usage')
 
         print("🚀 Launching Chrome browser...")
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        service = Service(driver_path)
+        driver = webdriver.Chrome(service=service, options=options)
 
         query = "Belt and Road Initiative"
         search_url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
@@ -59,14 +43,15 @@ def scrape_google():
 
         print("🔎 Scraping links...")
         results = driver.find_elements(By.CSS_SELECTOR, 'div.yuRUbf > a')
-
         links = [a.get_attribute('href') for a in results]
+
         print(f"✅ Found {len(links)} links.")
         for link in links:
             print(link)
 
         driver.quit()
         return {"links": links}
+
     except Exception as e:
         print(f"❌ Exception occurred: {str(e)}")
         return {"error": str(e)}
