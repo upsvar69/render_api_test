@@ -1,27 +1,19 @@
 #!/usr/bin/env bash
 set -o errexit
 
-echo "📦 Installing Chrome..."
+echo "📦 Installing Chrome and Chromedriver..."
 
 mkdir -p .render/chrome
-cd .render/chrome
 
-# Download and unzip Chrome
-curl -SL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o chrome.deb
-ar x chrome.deb
-tar -xf data.tar.xz
+# Download prebuilt Chromium + Chromedriver bundle
+curl -SL https://github.com/BugzTheBunny/chrome-on-render/releases/latest/download/chrome-on-render.tar.gz | tar -xzC .render/chrome
 
-# Move Chrome to Render-compatible path
-mkdir -p opt/google/chrome
-mv opt/google/chrome/* ./opt/google/chrome/
-chmod +x ./opt/google/chrome/google-chrome
+# Make Chrome binary executable
+chmod +x .render/chrome/opt/google/chrome/google-chrome
 
-# Print out the directory structure to ensure Chrome was installed
-echo "📂 Chrome install path structure:"
-ls -lR .
+# Print structure for verification
+echo "📂 Installed files:"
+ls -lR .render/chrome
 
-# Move chromedriver (Render automatically provides the matching one)
-mkdir -p usr/bin
-cp /usr/bin/chromedriver usr/bin/ || echo "⚠️ No chromedriver found globally — skipping copy."
-
-cd ../../
+echo "📦 Installing Python requirements..."
+pip install -r requirements.txt
