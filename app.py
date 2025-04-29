@@ -5,6 +5,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import selenium
+import os
 
 app = Flask(__name__)
 
@@ -13,7 +14,10 @@ def scrape_google():
     print(f"🧩 Selenium version: {selenium.__version__}")
 
     try:
+        chrome_path = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"
+
         options = webdriver.ChromeOptions()
+        options.binary_location = chrome_path
         options.add_argument('--headless')  # Needed for Render.com
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
@@ -44,4 +48,5 @@ def scrape_google():
         return {"error": str(e)}
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port)

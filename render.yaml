@@ -1,9 +1,12 @@
 services:
   - type: web
     name: selenium-google-scraper
-    env: docker
+    runtime: python
     plan: free
-    dockerfilePath: ./Dockerfile
+    buildCommand: ./render-build.sh
+    startCommand: >
+      export PATH="$PATH:/opt/render/project/.render/chrome/opt/google/chrome" &&
+      gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHONUNBUFFERED
         value: "TRUE"
