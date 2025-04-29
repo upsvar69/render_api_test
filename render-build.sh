@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 set -o errexit
 
-STORAGE_DIR=/opt/render/project/.render
+echo "📦 Installing Chrome..."
 
-if [[ ! -d $STORAGE_DIR/chrome ]]; then
-  echo "...Downloading Chrome"
-  mkdir -p $STORAGE_DIR/chrome
-  cd $STORAGE_DIR/chrome
-  wget -P ./ https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-  dpkg -x ./google-chrome-stable_current_amd64.deb $STORAGE_DIR/chrome
-  rm ./google-chrome-stable_current_amd64.deb
-  cd $HOME/project/src || cd $HOME/project # fallback to your app dir
-else
-  echo "...Using Chrome from cache"
-fi
+mkdir -p .render/chrome
+cd .render/chrome
+
+# Download and unzip Chrome
+curl -SL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o chrome.deb
+ar x chrome.deb
+tar -xf data.tar.xz
+
+# Move Chrome to Render-compatible path
+mkdir -p opt/google/chrome
+mv opt/google/chrome/* ./opt/google/chrome/
+chmod +x ./opt/google/chrome/google-chrome
+
+# Move chromedriver (Render automatically provides the matching one)
+mkdir -p usr/bin
+cp /usr/bin/chromedriver usr/bin/ || echo "⚠️ No chromedriver found globally — skipping copy."
+
+cd ../../
