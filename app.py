@@ -12,9 +12,9 @@ app = Flask(__name__)
 def scrape_google():
     print(f"🧩 Selenium version: {selenium.__version__}")
 
-    # Updated paths for system-installed Chromium and Chromedriver
-    chrome_path = "/usr/bin/chromium-browser"  # or "/usr/bin/chromium" depending on your system
-    driver_path = "/usr/bin/chromedriver"
+    # Use environment variables for Chrome and Chromedriver paths
+    chrome_path = os.environ.get("CHROME_BIN", "/usr/bin/chromium-browser")
+    driver_path = os.environ.get("CHROMEDRIVER_PATH", "/usr/bin/chromedriver")
 
     print(f"🔍 Checking Chrome binary path: {chrome_path}")
     print(f"🔍 Checking Chromedriver path: {driver_path}")
