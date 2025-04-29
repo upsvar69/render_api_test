@@ -1,13 +1,3 @@
-from flask import Flask
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-import time
-import selenium
-import os
-
-app = Flask(__name__)
-
 @app.route('/')
 def scrape_google():
     print(f"🧩 Selenium version: {selenium.__version__}")
@@ -15,6 +5,9 @@ def scrape_google():
     # Paths for Chrome and Chromedriver on Render.com
     chrome_path = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"
     driver_path = "/opt/render/project/.render/chrome/usr/bin/chromedriver"
+
+    print(f"🔍 Checking Chrome binary path: {chrome_path}")
+    print(f"🔍 Checking Chromedriver path: {driver_path}")
 
     if not os.path.exists(chrome_path):
         print("⚠️ Chrome binary not found at expected path.")
@@ -55,7 +48,3 @@ def scrape_google():
     except Exception as e:
         print(f"❌ Exception occurred: {str(e)}")
         return {"error": str(e)}
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    app.run(host="0.0.0.0", port=port)
