@@ -6,19 +6,44 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import selenium
 import os
+import subprocess
 
 app = Flask(__name__)
+
+def find_chrome():
+    try:
+        # Use `find` to search for chrome binary in the cache
+        result = subprocess.run(
+            ["find", "/opt/render/project/.render", "-type", "f", "-name", "google-chrome"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        path = result.stdout.strip()
+        if path:
+            print(f"🔍 Chrome binary found at: {path}")
+            return path
+        else:
+            print("⚠️ Chrome binary not found using grep/find.")
+            return None
+    except Exception as e:
+        print(f"❌ Error while searching for Chrome: {e}")
+        return None
 
 @app.route('/')
 def scrape_google():
     print(f"🧩 Selenium version: {selenium.__version__}")
 
-    try:
-        chrome_path = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"
+    chrome_path = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"
+    if not os.path.isfile(chrome_path):
+        chrome_path = find_chrome()
+        if not chrome_path:
+            return {"error": "Chrome binary not found."}
 
+    try:
         options = webdriver.ChromeOptions()
         options.binary_location = chrome_path
-        options.add_argument('--headless')  # Needed for Render.com
+        options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
 
@@ -41,7 +66,6 @@ def scrape_google():
             print(link)
 
         driver.quit()
-
         return {"links": links}
     except Exception as e:
         print(f"❌ Exception occurred: {str(e)}")
