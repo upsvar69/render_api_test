@@ -12,12 +12,14 @@ app = Flask(__name__)
 def scrape_google():
     print(f"🧩 Selenium version: {selenium.__version__}")
 
-    # Paths for Chrome and Chromedriver on Render.com
-    chrome_path = "/opt/render/project/.render/chrome/opt/google/chrome/google-chrome"
-    driver_path = "/opt/render/project/.render/chrome/usr/bin/chromedriver"
+    # Updated paths for system-installed Chromium and Chromedriver
+    chrome_path = "/usr/bin/chromium-browser"  # or "/usr/bin/chromium" depending on your system
+    driver_path = "/usr/bin/chromedriver"
 
     print(f"🔍 Checking Chrome binary path: {chrome_path}")
     print(f"🔍 Checking Chromedriver path: {driver_path}")
+    print(f"🔍 Chrome exists: {os.path.exists(chrome_path)}")
+    print(f"🔍 Chromedriver exists: {os.path.exists(driver_path)}")
 
     if not os.path.exists(chrome_path):
         print("⚠️ Chrome binary not found at expected path.")
