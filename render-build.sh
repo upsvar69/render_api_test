@@ -16,6 +16,10 @@ mkdir -p opt/google/chrome
 mv opt/google/chrome/* ./opt/google/chrome/
 chmod +x ./opt/google/chrome/google-chrome
 
+# Print out the directory structure to ensure Chrome was installed
+echo "📂 Chrome install path structure:"
+ls -lR .
+
 # Move chromedriver (Render automatically provides the matching one)
 mkdir -p usr/bin
 cp /usr/bin/chromedriver usr/bin/ || echo "⚠️ No chromedriver found globally — skipping copy."
