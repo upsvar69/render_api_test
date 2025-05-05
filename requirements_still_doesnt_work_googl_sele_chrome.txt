@@ -1,0 +1,7 @@
+requests
+gunicorn
+beautifulsoup4
+feedparser
+selenium==4.20.0
+webdriver-manager==4.0.1
+flask==3.0.2

@@ -1,0 +1,19 @@
+"""
+We couldnt hook up chrome to the render.com
+we solved this problem through cordel22 but was useless
+cause google wont let u scrape with selenium anyway
+next step is modigy the working beautiful soup scraper on google
+to duckduck go and see if we can get the data
+"""
+services:
+  - type: web
+    name: selenium-google-scraper
+    runtime: python
+    plan: free
+    buildCommand: ./render-build.sh
+    startCommand: >
+      export PATH="$PATH:/opt/render/project/.render/chrome/opt/google/chrome" &&
+      gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "TRUE"

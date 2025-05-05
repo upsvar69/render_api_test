@@ -1,66 +1,64 @@
 from flask import Flask
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-import time
-import selenium
-import os
+import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-@app.route('/')
-def scrape_google():
-    print(f"🧩 Selenium version: {selenium.__version__}")
+GOOGLE_SEARCH_URL = "https://www.google.com/search?q=site:bbc.com+%22Belt+and+Road+Initiative%22"
 
-    # Use environment variables for Chrome and Chromedriver paths
-    chrome_path = os.environ.get("CHROME_BIN", "/usr/bin/chromium-browser")
-    driver_path = os.environ.get("CHROMEDRIVER_PATH", "/usr/bin/chromedriver")
+@app.route("/")
+def home():
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
+    }
 
-    print(f"🔍 Checking Chrome binary path: {chrome_path}")
-    print(f"🔍 Checking Chromedriver path: {driver_path}")
-    print(f"🔍 Chrome exists: {os.path.exists(chrome_path)}")
-    print(f"🔍 Chromedriver exists: {os.path.exists(driver_path)}")
-
-    if not os.path.exists(chrome_path):
-        print("⚠️ Chrome binary not found at expected path.")
-        return {"error": "Chrome binary not found."}
-    if not os.path.exists(driver_path):
-        print("⚠️ Chromedriver not found at expected path.")
-        return {"error": "Chromedriver not found."}
+    debug_log = []
+    articles = []
 
     try:
-        options = webdriver.ChromeOptions()
-        options.binary_location = chrome_path
-        options.add_argument('--headless')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
+        debug_log.append("🔍 Sending request to Google search...")
+        response = requests.get(GOOGLE_SEARCH_URL, headers=headers, timeout=10)
+        debug_log.append(f"📡 Google response status: {response.status_code}")
+        debug_log.append(f"📦 Content size: {len(response.content)} bytes")
 
-        print("🚀 Launching Chrome browser...")
-        service = Service(driver_path)
-        driver = webdriver.Chrome(service=service, options=options)
+        soup = BeautifulSoup(response.text, "html.parser")
 
-        query = "Belt and Road Initiative"
-        search_url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
-        print(f"🌐 Navigating to: {search_url}")
+        result_blocks = soup.select("div.yuRUbf a[href]")
+        debug_log.append(f"🔍 Found {len(result_blocks)} <a> tags inside div.yuRUbf")
 
-        driver.get(search_url)
-        time.sleep(3)
+        found_titles = 0
+        for idx, a in enumerate(result_blocks):
+            debug_log.append(f"🔗 Checking link #{idx + 1}")
+            title_tag = a.find("h3")
+            if not title_tag:
+                debug_log.append("   ❌ No <h3> tag inside <a>")
+                continue
 
-        print("🔎 Scraping links...")
-        results = driver.find_elements(By.CSS_SELECTOR, 'div.yuRUbf > a')
-        links = [a.get_attribute('href') for a in results]
+            title = title_tag.get_text(strip=True)
+            link = a.get("href")
 
-        print(f"✅ Found {len(links)} links.")
-        for link in links:
-            print(link)
+            if "bbc.com" not in link:
+                debug_log.append(f"   ⚠️ Link does not point to bbc.com: {link}")
+                continue
 
-        driver.quit()
-        return {"links": links}
+            debug_log.append(f"   ✅ Found BBC article: {title}")
+            articles.append((title, link))
+            found_titles += 1
+
+            if found_titles >= 10:
+                break
+
+        html = "<h1>🔗 BBC Articles on Belt and Road Initiative Again (via Google)</h1><ul>"
+        for title, link in articles:
+            html += f'<li><a href="{link}" target="_blank">{title}</a></li>'
+        html += "</ul>"
+
+        html += "<hr><h2>🧪 Debug Info</h2><pre>" + "\n".join(debug_log) + "</pre>"
+        html += "<h3>Sample raw HTML (first 500 chars)</h3><pre>" + response.text[:500].replace("<", "&lt;") + "</pre>"
+
+        return html
 
     except Exception as e:
-        print(f"❌ Exception occurred: {str(e)}")
-        return {"error": str(e)}
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    app.run(host="0.0.0.0", port=port)
+        debug_text = "\n".join(debug_log)
+        return f"<h1>❌ Error</h1><pre>{e}</pre><hr><pre>{debug_text}</pre>"
