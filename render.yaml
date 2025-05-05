@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: flask-belt-road-app
-    env: python
-    plan: free
-    branch: main
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
