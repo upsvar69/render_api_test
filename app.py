@@ -1,7 +1,6 @@
 from flask import Flask
 import requests
 from bs4 import BeautifulSoup
-from newspaper import Article
 import time
 import traceback
 
@@ -39,34 +38,14 @@ def home():
             link = a.get('href')
             debug_log.append(f"🔗 Processing link: {raw_title} ({link})")
 
-            try:
-                article = Article(link)
-                article.download()
-                article.parse()
-
-                article_title = article.title or raw_title or "No Title"
-                authors = ', '.join(article.authors) or "Unknown Author"
-                source = article.source_url or "Unknown Source"
-                text_snippet = article.text[:500].replace("\n", " ") + "..."
-
-                results_html += f"""
-                    <li>
-                        <strong>Title:</strong> <a href="{link}" target="_blank">{article_title}</a><br>
-                        <strong>Author(s):</strong> {authors}<br>
-                        <strong>Source:</strong> {source}<br>
-                        <strong>Excerpt:</strong> {text_snippet}
-                    </li><hr>
-                """
-                debug_log.append(f"✅ Successfully extracted article: {article_title}")
-            except Exception as e:
-                debug_log.append(f"❌ Failed to extract article content: {link}")
-                debug_log.append(f"   Error: {str(e)}")
-                results_html += f"""
-                    <li>
-                        <strong>Title:</strong> <a href="{link}" target="_blank">{raw_title}</a><br>
-                        <strong>Status:</strong> Could not extract full article details.
-                    </li><hr>
-                """
+            # Only display the title and link without trying to scrape the article content
+            results_html += f"""
+                <li>
+                    <strong>Title:</strong> <a href="{link}" target="_blank">{raw_title}</a><br>
+                    <strong>Link:</strong> {link}
+                </li><hr>
+            """
+            debug_log.append(f"✅ Successfully displayed link: {raw_title}")
 
             article_count += 1
             time.sleep(1)  # Be polite: wait 1 second between processing each article
