@@ -4,7 +4,9 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-GOOGLE_SEARCH_URL = "https://www.google.com/search?q=site:bbc.com+%22Belt+and+Road+Initiative%22"
+DUCKDUCKGO_SEARCH_URL = "https://html.duckduckgo.com/html/"
+QUERY = '"Belt and Road Initiative"'
+
 
 @app.route("/")
 def home():
@@ -12,44 +14,28 @@ def home():
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                       "(KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
     }
-
     debug_log = []
     articles = []
 
     try:
-        debug_log.append("🔍 Sending request to Google search...")
-        response = requests.get(GOOGLE_SEARCH_URL, headers=headers, timeout=10)
-        debug_log.append(f"📡 Google response status: {response.status_code}")
+        debug_log.append("🔍 Sending POST request to DuckDuckGo...")
+        response = requests.post(DUCKDUCKGO_SEARCH_URL, data={'q': QUERY}, headers=headers, timeout=10)
+        debug_log.append(f"📡 DuckDuckGo response status: {response.status_code}")
         debug_log.append(f"📦 Content size: {len(response.content)} bytes")
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        result_blocks = soup.select("div.yuRUbf a[href]")
-        debug_log.append(f"🔍 Found {len(result_blocks)} <a> tags inside div.yuRUbf")
+        result_blocks = soup.select("a.result__a")
+        debug_log.append(f"🔍 Found {len(result_blocks)} result links")
 
-        found_titles = 0
-        for idx, a in enumerate(result_blocks):
-            debug_log.append(f"🔗 Checking link #{idx + 1}")
-            title_tag = a.find("h3")
-            if not title_tag:
-                debug_log.append("   ❌ No <h3> tag inside <a>")
-                continue
+        for idx, a in enumerate(result_blocks[:10]):  # Only take first 10
+            title = a.get_text(strip=True)
+            link = a.get('href')
 
-            title = title_tag.get_text(strip=True)
-            link = a.get("href")
-
-            if "bbc.com" not in link:
-                debug_log.append(f"   ⚠️ Link does not point to bbc.com: {link}")
-                continue
-
-            debug_log.append(f"   ✅ Found BBC article: {title}")
+            debug_log.append(f"   ✅ Found article: {title} ({link})")
             articles.append((title, link))
-            found_titles += 1
 
-            if found_titles >= 10:
-                break
-
-        html = "<h1>🔗 BBC Articles on Belt and Road Initiative Again (via Google)</h1><ul>"
+        html = "<h1>🔗 Articles on Belt and Road Initiative (via DuckDuckGo)</h1><ul>"
         for title, link in articles:
             html += f'<li><a href="{link}" target="_blank">{title}</a></li>'
         html += "</ul>"
