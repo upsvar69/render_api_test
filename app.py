@@ -1,5 +1,5 @@
 from flask import Flask
-from duckduckgo_search import DDGS, DuckDuckGoSearchException
+from duckduckgo_search import DDGS
 from newspaper import Article
 import time
 import traceback
@@ -17,7 +17,7 @@ def polite_search(query, max_results):
         try:
             with DDGS() as ddgs:
                 return list(ddgs.text(query, max_results=max_results))
-        except DuckDuckGoSearchException as e:
+        except Exception as e:
             if "Ratelimit" in str(e):
                 print(f"⏳ Rate limited. Waiting {RETRY_DELAY} seconds before retrying...")
                 time.sleep(RETRY_DELAY)
